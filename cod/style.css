@@ -1,0 +1,52 @@
+:root {
+    --verde-agua: #5fb9a8;
+    --dark: #2c3e50;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --gray: #f4f7f6;
+}
+
+body { font-family: 'Segoe UI', sans-serif; background: var(--gray); margin: 0; padding: 20px; }
+.container { max-width: 1200px; margin: auto; }
+
+.main-header { 
+    background: var(--verde-agua); 
+    color: white; 
+    padding: 25px; 
+    border-radius: 12px; 
+    text-align: center; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+}
+
+.main-nav { display: flex; justify-content: center; gap: 10px; margin-top: 15px; }
+.nav-btn { background: rgba(0,0,0,0.2); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: 600; }
+.nav-btn.active { background: white; color: var(--verde-agua); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+.card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); margin-bottom: 20px; }
+.grid-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 15px; }
+
+input, select { padding: 10px; border: 1px solid #ddd; border-radius: 6px; outline: none; }
+
+.btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; color: white; }
+.btn-save { background: var(--success); }
+.btn-mov { background: var(--dark); width: 100%; }
+.btn-cancel { background: #95a5a6; }
+
+.tabela-estilizada { width: 100%; border-collapse: collapse; background: white; border-radius: 8px; margin-top: 10px; }
+.tabela-estilizada th, td { padding: 12px; text-align: left; border-bottom: 1px solid #eee; }
+.tabela-estilizada th { background: #f8f9fa; color: var(--dark); font-size: 0.9em; }
+
+/* ESTILOS DE IMPRESSÃO */
+.print-only { display: none; }
+@media print {
+    .no-print { display: none !important; }
+    .print-only { display: block !important; }
+    .page-break { page-break-after: always; }
+    .header-print { background: var(--verde-agua) !important; color: white !important; padding: 15px; text-align: center; -webkit-print-color-adjust: exact; }
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; font-size: 12px; }
+}

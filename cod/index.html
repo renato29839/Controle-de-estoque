@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estoque - NEUROPSICOCENTRO</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container no-print">
+        <header class="main-header">
+            <h1>CONTROLE DE ESTOQUE - NEUROPSICOCENTRO</h1>
+            <nav class="main-nav">
+                <button class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">📦 Inventário</button>
+                <button class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">🔄 Movimentar</button>
+                <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📜 Histórico</button>
+                <button class="nav-btn print-trigger" onclick="prepararImpressao()">🖨️ Imprimir por Unidade</button>
+            </nav>
+        </header>
+
+        <main id="aba-estoque" class="tab-content active">
+            <section class="card">
+                <h3 id="titulo-form">Cadastrar Item</h3>
+                <form id="form-estoque">
+                    <input type="hidden" id="edit-index">
+                    <div class="grid-form">
+                        <select id="unidade" required>
+                            <option value="">Unidade</option>
+                            <option value="MATRIZ">MATRIZ</option>
+                            <option value="LIFE">LIFE</option>
+                            <option value="SUL">SUL</option>
+                        </select>
+                        <select id="grupo" onchange="atualizarSubgrupos()" required>
+                            <option value="">Grupo</option>
+                            <option value="Imobilizado">Imobilizado</option>
+                            <option value="Limpeza">Materiais de Limpeza</option>
+                        </select>
+                        <select id="subgrupo" required><option value="">Subgrupo</option></select>
+                        <input type="text" id="item-nome" placeholder="Descrição do Item" required>
+                        <input type="number" id="item-qtd" placeholder="Qtd Inicial" min="0" required>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save">Salvar no Sistema</button>
+                        <button type="button" class="btn btn-cancel" onclick="limparFormulario()">Limpar</button>
+                    </div>
+                </form>
+            </section>
+
+            <table class="tabela-estilizada">
+                <thead>
+                    <tr>
+                        <th>Unidade</th>
+                        <th>Grupo > Subgrupo</th>
+                        <th>Item</th>
+                        <th>Saldo Atual</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="corpo-tabela"></tbody>
+            </table>
+        </main>
+
+        <div id="aba-movimentacao" class="tab-content">
+            <section class="card">
+                <h3>Lançar Entrada ou Saída</h3>
+                <form id="form-movimentacao">
+                    <div class="grid-form">
+                        <select id="mov-item" required><option value="">Selecione o Item...</option></select>
+                        <select id="mov-tipo" required>
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="saida">Saída (-)</option>
+                        </select>
+                        <input type="number" id="mov-qtd" placeholder="Quantidade" min="1" required>
+                    </div>
+                    <button type="submit" class="btn btn-mov">Confirmar Movimentação</button>
+                </form>
+            </section>
+        </div>
+
+        <div id="aba-historico" class="tab-content">
+            <section class="card">
+                <h3>Registro de Movimentações Recentes</h3>
+                <table class="tabela-estilizada">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Unidade</th>
+                            <th>Item</th>
+                            <th>Tipo</th>
+                            <th>Qtd</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-historico"></tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+
+    <div id="area-impressao" class="print-only">
+        </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
