@@ -46,7 +46,7 @@
                 <form id="form-estoque">
                     <input type="hidden" id="edit-index">
                     <div class="grid-form">
-                        <input type="text" id="item-sku" placeholder="SKU (Automático)" readonly title="Gerado automaticamente">
+                        <input type="text" id="item-sku" placeholder="SKU" readonly>
                         <select id="grupo" onchange="atualizarSubgrupos()" required>
                             <option value="">Grupo</option>
                             <option value="Imobilizado">Imobilizado</option>
@@ -90,7 +90,7 @@
                         <option value="LIFE">LIFE</option>
                         <option value="SUL">SUL</option>
                     </select>
-                    <input type="text" id="busca-estoque" placeholder="Buscar por nome ou SKU..." onkeyup="renderizarTabela()">
+                    <input type="text" id="busca-estoque" placeholder="Buscar..." onkeyup="renderizarTabela()">
                 </div>
                 <div class="tabela-wrapper">
                     <table class="tabela-estilizada">
@@ -112,7 +112,7 @@
         </main>
 
         <div id="aba-movimentacao" class="tab-content">
-            <section class="card">
+             <section class="card">
                 <h3>Movimentação / Transferência</h3>
                 <form id="form-movimentacao">
                     <div class="grid-form">
@@ -169,6 +169,4 @@
 
     <script src="script.js"></script>
 </body>
-
 </html>
-
