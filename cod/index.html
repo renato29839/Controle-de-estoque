@@ -14,14 +14,14 @@
             <p>GESTÃO INTEGRADA DE ESTOQUE</p>
             
             <nav class="main-nav">
-                <button id="btn-tab-estoque" class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">Inventário Global</button>
-                <button id="btn-tab-movimentacao" class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">Movimentar / Transferir</button>
-                <button id="btn-tab-historico" class="nav-btn" onclick="trocarAba(event, 'aba-historico')">Auditoria (Logs)</button>
+                <button class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">Inventário Global</button>
+                <button class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">Movimentar / Transferir</button>
+                <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">Auditoria (Logs)</button>
                 <div class="nav-divider"></div>
-                <button class="nav-btn" onclick="exportarBackup()" style="background: #27ae60;">Exportar</button>
+                <button class="nav-btn btn-export" onclick="exportarBackup()">Exportar</button>
+                <button class="nav-btn btn-import" onclick="document.getElementById('input-importar').click()">Importar</button>
                 <input type="file" id="input-importar" style="display: none;" accept=".json" onchange="importarBackup(event)">
-                <button class="nav-btn" onclick="document.getElementById('input-importar').click()" style="background: #3498db;">Importar</button>
-                <button class="nav-btn" onclick="prepararImpressao()" style="background: #8e44ad;">Relatório</button>
+                <button class="nav-btn btn-print" onclick="prepararImpressao()">Relatório</button>
             </nav>
         </header>
 
@@ -36,13 +36,13 @@
                     <span id="dash-itens-criticos" class="dash-value">0</span>
                 </div>
                 <div class="dash-card orange">
-                    <span class="dash-title">Itens p/ Reposição</span>
+                    <span class="dash-title">Abaixo do Mínimo</span>
                     <span id="dash-itens-atencao" class="dash-value">0</span>
                 </div>
             </section>
 
             <section class="card">
-                <h3>Cadastro de Produto</h3>
+                <h3 id="titulo-form">Cadastro de Produto</h3>
                 <form id="form-estoque">
                     <input type="hidden" id="edit-index">
                     <div class="grid-form">
@@ -57,18 +57,18 @@
                         <input type="number" id="item-preco" placeholder="Preço (R$)" step="0.01" min="0" required>
                     </div>
 
-                    <div class="grid-unidades-estoque">
-                        <div class="unidade-input-group">
+                    <div class="grid-unidades">
+                        <div class="unidade-group">
                             <label>MATRIZ</label>
                             <input type="number" id="qtd-matriz" placeholder="Saldo" min="0" value="0">
                             <input type="number" id="min-matriz" placeholder="Mín" min="0" value="0">
                         </div>
-                        <div class="unidade-input-group">
+                        <div class="unidade-group">
                             <label>LIFE</label>
                             <input type="number" id="qtd-life" placeholder="Saldo" min="0" value="0">
                             <input type="number" id="min-life" placeholder="Mín" min="0" value="0">
                         </div>
-                        <div class="unidade-input-group">
+                        <div class="unidade-group">
                             <label>SUL</label>
                             <input type="number" id="qtd-sul" placeholder="Saldo" min="0" value="0">
                             <input type="number" id="min-sul" placeholder="Mín" min="0" value="0">
@@ -76,24 +76,24 @@
                     </div>
 
                     <div class="form-actions">
-                        <button type="submit" class="btn btn-save">Salvar no Catálogo</button>
-                        <button type="button" class="btn btn-cancel" onclick="limparFormulario()" style="background:#95a5a6">Limpar</button>
+                        <button type="submit" id="btn-salvar" class="btn btn-save">Salvar no Catálogo</button>
+                        <button type="button" class="btn btn-neutral" onclick="limparFormulario()">Limpar / Novo</button>
                     </div>
                 </form>
             </section>
 
             <section class="card">
-                <div class="grid-filtros">
-                    <select id="filtro-unidade" onchange="renderizarTabela()">
-                        <option value="TODAS">Visão Consolidada (Todas)</option>
+                <div class="table-header-controls">
+                    <select id="filtro-unidade" onchange="renderizarTabela()" style="width: auto; margin-right: 10px;">
+                        <option value="TODAS">Visão Consolidada</option>
                         <option value="MATRIZ">MATRIZ</option>
                         <option value="LIFE">LIFE</option>
                         <option value="SUL">SUL</option>
                     </select>
-                    <input type="text" id="busca-estoque" placeholder="Buscar..." onkeyup="renderizarTabela()">
+                    <input type="text" id="busca-estoque" placeholder="Pesquisar item..." onkeyup="renderizarTabela()" style="max-width: 300px;">
                 </div>
-                <div class="tabela-wrapper">
-                    <table class="tabela-estilizada">
+                <div class="table-wrapper">
+                    <table class="main-table">
                         <thead>
                             <tr>
                                 <th>Unidade</th>
@@ -101,7 +101,7 @@
                                 <th>Produto</th>
                                 <th>Saldo</th>
                                 <th>Mínimo</th>
-                                <th>Total</th>
+                                <th>Subtotal</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -112,8 +112,8 @@
         </main>
 
         <div id="aba-movimentacao" class="tab-content">
-             <section class="card">
-                <h3>Movimentação / Transferência</h3>
+            <section class="card">
+                <h3>Movimentação de Estoque</h3>
                 <form id="form-movimentacao">
                     <div class="grid-form">
                         <select id="mov-unidade-origem" required>
@@ -128,7 +128,7 @@
                             <option value="saida">Saída (-)</option>
                             <option value="transferencia">Transferência (⇄)</option>
                         </select>
-                        <select id="mov-unidade-destino" style="display:none; border: 2px solid var(--verde-agua);">
+                        <select id="mov-unidade-destino" style="display:none;">
                             <option value="">Destino...</option>
                             <option value="MATRIZ">MATRIZ</option>
                             <option value="LIFE">LIFE</option>
@@ -137,25 +137,25 @@
                         <input type="number" id="mov-qtd" placeholder="Qtd" min="1" required>
                         <input type="text" id="mov-usuario" placeholder="Responsável" required>
                     </div>
-                    <button type="submit" class="btn btn-mov">Efetivar Lançamento</button>
+                    <button type="submit" class="btn btn-action">Processar Movimentação</button>
                 </form>
             </section>
         </div>
 
         <div id="aba-historico" class="tab-content">
             <section class="card">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px">
-                    <h3>Auditoria de Movimentações</h3>
-                    <button class="btn" style="background:var(--danger); font-size:11px" onclick="limparHistorico()">Limpar Tudo</button>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h3>Registro de Auditoria</h3>
+                    <button class="btn btn-danger" onclick="limparHistorico()">Limpar Logs</button>
                 </div>
-                <table class="tabela-estilizada">
+                <table class="main-table">
                     <thead>
                         <tr>
                             <th>Data/Hora</th>
                             <th>Operação</th>
                             <th>Item</th>
-                            <th>Movimentação</th>
-                            <th>Responsável</th>
+                            <th>Local</th>
+                            <th>Usuário</th>
                         </tr>
                     </thead>
                     <tbody id="corpo-historico"></tbody>
