@@ -210,4 +210,49 @@ function limparHistorico() { if(confirm("Deseja apagar todos os logs?")) { histo
 // Inicialização
 prepararNovoCadastro();
 atualizarDashboard();
+
 renderizarTabela();
+function prepararImpressao() {
+    const areaPrint = document.getElementById('area-impressao');
+    
+    // 1. Criar o cabeçalho do relatório
+    let conteudo = `
+        <div style="text-align:center; margin-bottom: 20px;">
+            <h2>NEUROPSICOCENTRO - Relatório de Estoque</h2>
+            <p>Data de emissão: ${new Date().toLocaleString('pt-BR')}</p>
+        </div>
+        <table style="width:100%; border-collapse: collapse; font-size: 12px;">
+            <thead>
+                <tr style="background: #eee;">
+                    <th style="border: 1px solid #ddd; padding: 8px;">SKU</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Produto</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Matriz</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Life</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Sul</th>
+                    <th style="border: 1px solid #ddd; padding: 8px;">Total Geral</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+
+    // 2. Adicionar os itens
+    estoque.forEach(item => {
+        const totalQtd = item.saldos.MATRIZ + item.saldos.LIFE + item.saldos.SUL;
+        conteudo += `
+            <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${item.sku}</td>
+                <td style="border: 1px solid #ddd; padding: 8px;">${item.nome}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">${item.saldos.MATRIZ}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">${item.saldos.LIFE}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;">${item.saldos.SUL}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align:center;"><strong>${totalQtd}</strong></td>
+            </tr>
+        `;
+    });
+
+    conteudo += `</tbody></table>`;
+
+    // 3. Inserir na div e imprimir
+    areaPrint.innerHTML = conteudo;
+    window.print();
+}
