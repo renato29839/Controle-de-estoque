@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEUROPSICOCENTRO - Gestão Global</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container no-print">
+        <header class="main-header">
+            <h1>GESTÃO INTEGRADA DE ESTOQUE</h1>
+            <p>NEUROPSICOCENTRO - Unidades: MATRIZ | LIFE | SUL</p>
+            
+            <nav class="main-nav">
+                <button id="btn-tab-estoque" class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">Inventário Global</button>
+                <button id="btn-tab-movimentacao" class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">Movimentar / Transferir</button>
+                <button id="btn-tab-historico" class="nav-btn" onclick="trocarAba(event, 'aba-historico')">Auditoria (Logs)</button>
+                <div class="nav-divider"></div>
+                <button class="nav-btn" onclick="exportarBackup()" style="background: #27ae60;">Exportar</button>
+                <input type="file" id="input-importar" style="display: none;" accept=".json" onchange="importarBackup(event)">
+                <button class="nav-btn" onclick="document.getElementById('input-importar').click()" style="background: #3498db;">Importar</button>
+                <button class="nav-btn" onclick="prepararImpressao()" style="background: #8e44ad;">Relatório</button>
+            </nav>
+        </header>
+
+        <main id="aba-estoque" class="tab-content active">
+            <section class="dashboard-grid">
+                <div class="dash-card blue">
+                    <span class="dash-title">Patrimônio Global</span>
+                    <span id="dash-total-geral" class="dash-value">R$ 0,00</span>
+                </div>
+                <div class="dash-card red">
+                    <span class="dash-title">Itens Zerados</span>
+                    <span id="dash-itens-criticos" class="dash-value">0</span>
+                </div>
+                <div class="dash-card orange">
+                    <span class="dash-title">Itens p/ Reposição</span>
+                    <span id="dash-itens-atencao" class="dash-value">0</span>
+                </div>
+            </section>
+
+            <section class="card">
+                <h3>Cadastro de Produto Global</h3>
+                <form id="form-estoque">
+                    <input type="hidden" id="edit-index">
+                    <div class="grid-form">
+                        <input type="text" id="item-sku" placeholder="SKU/Código Único" required>
+                        <select id="grupo" onchange="atualizarSubgrupos()" required>
+                            <option value="">Grupo</option>
+                            <option value="Imobilizado">Imobilizado</option>
+                            <option value="Limpeza">Materiais de Limpeza</option>
+                        </select>
+                        <select id="subgrupo" required><option value="">Subgrupo</option></select>
+                        <input type="text" id="item-nome" placeholder="Descrição do Item" required style="grid-column: span 2;">
+                        <input type="number" id="item-preco" placeholder="Preço Unitário (R$)" step="0.01" min="0" required>
+                    </div>
+
+                    <div class="grid-unidades-estoque">
+                        <div class="unidade-input-group">
+                            <label>MATRIZ</label>
+                            <input type="number" id="qtd-matriz" placeholder="Saldo" min="0" value="0">
+                            <input type="number" id="min-matriz" placeholder="Mín" min="0" value="0">
+                        </div>
+                        <div class="unidade-input-group">
+                            <label>LIFE</label>
+                            <input type="number" id="qtd-life" placeholder="Saldo" min="0" value="0">
+                            <input type="number" id="min-life" placeholder="Mín" min="0" value="0">
+                        </div>
+                        <div class="unidade-input-group">
+                            <label>SUL</label>
+                            <input type="number" id="qtd-sul" placeholder="Saldo" min="0" value="0">
+                            <input type="number" id="min-sul" placeholder="Mín" min="0" value="0">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-save">Salvar no Catálogo</button>
+                        <button type="button" class="btn btn-cancel" onclick="limparFormulario()">Limpar</button>
+                    </div>
+                </form>
+            </section>
+
+            <section class="card">
+                <div class="grid-filtros">
+                    <select id="filtro-unidade" onchange="renderizarTabela()">
+                        <option value="TODAS">Visão Consolidada (Todas)</option>
+                        <option value="MATRIZ">MATRIZ</option>
+                        <option value="LIFE">LIFE</option>
+                        <option value="SUL">SUL</option>
+                    </select>
+                    <input type="text" id="busca-estoque" placeholder="Buscar SKU ou Nome..." onkeyup="renderizarTabela()">
+                </div>
+            </section>
+
+            <div class="tabela-wrapper">
+                <table class="tabela-estilizada">
+                    <thead>
+                        <tr>
+                            <th>Unidade</th>
+                            <th>SKU</th>
+                            <th>Produto</th>
+                            <th>Saldo</th>
+                            <th>Mínimo</th>
+                            <th>Total</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+            </div>
+        </main>
+
+        <div id="aba-movimentacao" class="tab-content">
+            <section class="card">
+                <h3>Movimentação de Estoque</h3>
+                <form id="form-movimentacao">
+                    <div class="grid-form">
+                        <select id="mov-unidade-origem" required>
+                            <option value="">Unidade de Origem...</option>
+                            <option value="MATRIZ">MATRIZ</option>
+                            <option value="LIFE">LIFE</option>
+                            <option value="SUL">SUL</option>
+                        </select>
+                        <select id="mov-item" required><option value="">Selecione o Item...</option></select>
+                        <select id="mov-tipo" onchange="toggleDestino()" required>
+                            <option value="entrada">Entrada (+)</option>
+                            <option value="saida">Saída (-)</option>
+                            <option value="transferencia">Transferência (⇄)</option>
+                        </select>
+                        <select id="mov-unidade-destino" style="display:none; border: 2px solid var(--verde-agua);">
+                            <option value="">Destino da Transferência...</option>
+                            <option value="MATRIZ">MATRIZ</option>
+                            <option value="LIFE">LIFE</option>
+                            <option value="SUL">SUL</option>
+                        </select>
+                        <input type="number" id="mov-qtd" placeholder="Quantidade" min="1" required>
+                        <input type="text" id="mov-usuario" placeholder="Responsável" required>
+                    </div>
+                    <button type="submit" class="btn btn-mov">Confirmar Lançamento</button>
+                </form>
+            </section>
+        </div>
+
+        <div id="aba-historico" class="tab-content">
+            <section class="card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Registros de Auditoria</h3>
+                    <button class="btn" style="background:var(--danger); font-size:12px" onclick="limparHistorico()">Limpar Logs</button>
+                </div>
+                <table class="tabela-estilizada">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Operação</th>
+                            <th>Item</th>
+                            <th>Movimentação</th>
+                            <th>Responsável</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-historico"></tbody>
+                </table>
+            </section>
+        </div>
+    </div>
+
+    <div id="area-impressao" class="print-only"></div>
+    <div id="toast-msg" class="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
