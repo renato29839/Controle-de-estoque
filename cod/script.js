@@ -256,3 +256,58 @@ function prepararImpressao() {
     areaPrint.innerHTML = conteudo;
     window.print();
 }
+function prepararImpressao() {
+    const areaPrint = document.getElementById('area-impressao');
+    const unidades = ["MATRIZ", "LIFE", "SUL"];
+    let conteudo = `<h1 style="text-align:center; color:#2c3e50;">Relatório de Inventário por Unidade</h1>
+                    <p style="text-align:center;">Gerado em: ${new Date().toLocaleString('pt-BR')}</p>`;
+
+    unidades.forEach(unidade => {
+        // Filtrar apenas itens que pertencem ou têm estoque nessa unidade
+        const itensDaUnidade = estoque.filter(item => true); // Aqui pegamos todos para conferência
+
+        conteudo += `
+            <div style="page-break-after: always; margin-top: 30px;">
+                <h2 style="background: #5fb9a8; color: white; padding: 10px; border-radius: 5px;">Unidade: ${unidade}</h2>
+                <table style="width:100%; border-collapse: collapse; margin-bottom: 20px;">
+                    <thead>
+                        <tr style="background: #f2f2f2;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 100px;">SKU</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Produto / Descrição</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 80px;">Mínimo</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 80px;">Saldo Atual</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 150px;">Conferência Física</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        itensDaUnidade.forEach(item => {
+            const qtd = item.saldos[unidade];
+            const min = item.minimos[unidade];
+            const statusStyle = qtd <= min ? "color: red; font-weight: bold;" : "";
+
+            conteudo += `
+                <tr>
+                    <td style="border: 1px solid #ddd; padding: 8px; font-family: monospace;">${item.sku}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px;">${item.nome}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${min}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; text-align: center; ${statusStyle}">${qtd}</td>
+                    <td style="border: 1px solid #ddd; padding: 8px; border-bottom: 1px solid #000;"></td>
+                </tr>
+            `;
+        });
+
+        conteudo += `
+                    </tbody>
+                </table>
+                <div style="margin-top: 20px; display: flex; justify-content: space-between;">
+                    <span>Assinatura Responsável ${unidade}: __________________________________________</span>
+                </div>
+            </div>
+        `;
+    });
+
+    areaPrint.innerHTML = conteudo;
+    window.print();
+}
