@@ -1,191 +1,194 @@
 const SUBGRUPOS = {
-    "Imobilizado": ["Informática", "Móveis e Utensílios", "Máquinas", "Veículos", "Climatização"],
-    "Limpeza": ["Higiene", "Produtos Químicos", "Descartáveis", "Copa"]
+    "Imobilizado": ["Informática", "Móveis", "Máquinas", "Climatização"],
+    "Limpeza": ["Higiene", "Químicos", "Descartáveis", "Copa"]
 };
 
-let estoque = JSON.parse(localStorage.getItem('np_estoque_db')) || [];
-let historico = JSON.parse(localStorage.getItem('np_historico_db')) || [];
+let estoque = JSON.parse(localStorage.getItem('np_final_unidades')) || [];
+let historico = JSON.parse(localStorage.getItem('np_auditoria_unidades')) || [];
 
-// Alternar Abas
 function trocarAba(event, abaId) {
-    document.querySelectorAll('.tab-content').forEach(a => a.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(abaId).classList.add('active');
-    event.currentTarget.classList.add('active');
-
-    if (abaId === 'aba-movimentacao') popularSelectItens();
+    if (event) event.currentTarget.classList.add('active');
+    
+    if (abaId === 'aba-estoque') renderizarTabela();
     if (abaId === 'aba-historico') renderizarHistorico();
 }
 
-// Subgrupos Dinâmicos
 function atualizarSubgrupos() {
     const grupo = document.getElementById('grupo').value;
     const sub = document.getElementById('subgrupo');
     sub.innerHTML = '<option value="">Subgrupo</option>';
-    if (grupo) {
-        SUBGRUPOS[grupo].forEach(s => {
-            sub.innerHTML += `<option value="${s}">${s}</option>`;
-        });
+    if (SUBGRUPOS[grupo]) {
+        SUBGRUPOS[grupo].forEach(s => sub.innerHTML += `<option value="${s}">${s}</option>`);
     }
 }
 
-// Cadastro
+function salvarTudo() {
+    localStorage.setItem('np_final_unidades', JSON.stringify(estoque));
+    localStorage.setItem('np_auditoria_unidades', JSON.stringify(historico));
+    renderizarTabela();
+}
+
+// Renderização com Filtro por Unidade
+function renderizarTabela() {
+    const corpo = document.getElementById('corpo-tabela');
+    const filtroUnidade = document.getElementById('filtro-unidade').value;
+    const busca = document.getElementById('busca-estoque').value.toLowerCase();
+    let totalFinanceiro = 0;
+    corpo.innerHTML = '';
+
+    estoque.forEach((item, i) => {
+        const atendeFiltroUnidade = filtroUnidade === "TODAS" || item.unidade === filtroUnidade;
+        const atendeBusca = item.sku.toLowerCase().includes(busca) || item.nome.toLowerCase().includes(busca);
+
+        if (atendeFiltroUnidade && atendeBusca) {
+            const valorEstoque = item.quantidade * item.preco;
+            totalFinanceiro += valorEstoque;
+
+            let statusCls = '';
+            let label = 'OK';
+            if (item.quantidade <= 0) { statusCls = 'status-critico'; label = 'ZERADO'; }
+            else if (item.quantidade <= item.minimo) { statusCls = 'status-atencao'; label = 'REPOR'; }
+
+            corpo.innerHTML += `
+                <tr class="${statusCls}">
+                    <td><strong>${item.unidade}</strong><br><span class="badge-sku">${item.sku}</span></td>
+                    <td><small>${item.grupo}<br>${item.subgrupo}</small></td>
+                    <td>${item.nome}</td>
+                    <td><strong>${item.quantidade}</strong> / ${item.minimo}<br><small>${label}</small></td>
+                    <td>R$ ${valorEstoque.toFixed(2)}<br><small>Unit: R$ ${item.preco.toFixed(2)}</small></td>
+                    <td>
+                        <button onclick="editarItem(${i})" class="btn" style="background:orange; padding:5px">Editar</button>
+                    </td>
+                </tr>
+            `;
+        }
+    });
+    const labelFin = filtroUnidade === "TODAS" ? "Total Geral" : `Total ${filtroUnidade}`;
+    document.getElementById('resumo-financeiro').innerText = `${labelFin}: R$ ${totalFinanceiro.toFixed(2)}`;
+}
+
+// Lógica de Movimentação Filtrada
+function popularSelectItens() {
+    const unidadeSel = document.getElementById('mov-unidade-filtro').value;
+    const s = document.getElementById('mov-item');
+    s.innerHTML = '<option value="">Selecione o Item...</option>';
+    
+    estoque.forEach((item, i) => {
+        if (item.unidade === unidadeSel) {
+            s.innerHTML += `<option value="${i}">${item.nome} (${item.sku}) - Saldo: ${item.quantidade}</option>`;
+        }
+    });
+}
+
 document.getElementById('form-estoque').addEventListener('submit', function(e) {
     e.preventDefault();
     const index = document.getElementById('edit-index').value;
     const itemObj = {
+        sku: document.getElementById('item-sku').value.toUpperCase().trim(),
         unidade: document.getElementById('unidade').value,
         grupo: document.getElementById('grupo').value,
         subgrupo: document.getElementById('subgrupo').value,
-        nome: document.getElementById('item-nome').value,
-        quantidade: parseInt(document.getElementById('item-qtd').value)
+        nome: document.getElementById('item-nome').value.trim(),
+        quantidade: parseInt(document.getElementById('item-qtd').value),
+        minimo: parseInt(document.getElementById('item-min').value),
+        preco: parseFloat(document.getElementById('item-preco').value)
     };
+
+    if (index === "" && estoque.some(i => i.sku === itemObj.sku && i.unidade === itemObj.unidade)) {
+        alert("SKU duplicado nesta unidade!"); return;
+    }
 
     if (index === "") estoque.push(itemObj);
     else estoque[index] = itemObj;
 
     salvarTudo();
-    this.reset();
-    document.getElementById('edit-index').value = "";
-    alert("Item salvo!");
+    limparFormulario();
+    mostrarMensagem("Salvo com sucesso!");
 });
-
-// Lógica de Movimentação (Registra no Histórico)
-function popularSelectItens() {
-    const s = document.getElementById('mov-item');
-    s.innerHTML = '<option value="">Selecione...</option>';
-    estoque.forEach((item, i) => {
-        s.innerHTML += `<option value="${i}">${item.unidade} | ${item.nome} (Saldo: ${item.quantidade})</option>`;
-    });
-}
 
 document.getElementById('form-movimentacao').addEventListener('submit', function(e) {
     e.preventDefault();
     const idx = document.getElementById('mov-item').value;
+    if(!idx) return;
+
     const tipo = document.getElementById('mov-tipo').value;
     const qtd = parseInt(document.getElementById('mov-qtd').value);
+    const usuario = document.getElementById('mov-usuario').value;
 
     if (tipo === 'saida' && estoque[idx].quantidade < qtd) {
-        alert("Saldo insuficiente!");
-        return;
+        alert("Saldo insuficiente!"); return;
     }
 
-    // Atualiza saldo
-    if (tipo === 'entrada') estoque[idx].quantidade += qtd;
-    else estoque[idx].quantidade -= qtd;
+    const anterior = estoque[idx].quantidade;
+    estoque[idx].quantidade += (tipo === 'entrada' ? qtd : -qtd);
 
-    // Registra Histórico
     historico.unshift({
         data: new Date().toLocaleString(),
         unidade: estoque[idx].unidade,
-        item: estoque[idx].nome,
+        item: `[${estoque[idx].sku}] ${estoque[idx].nome}`,
         tipo: tipo.toUpperCase(),
-        qtd: qtd
+        qtd: qtd,
+        usuario: usuario,
+        rastreio: `${anterior} para ${estoque[idx].quantidade}`
     });
 
     salvarTudo();
-    alert("Movimentação concluída!");
+    mostrarMensagem("Movimentação registrada!");
     this.reset();
     popularSelectItens();
 });
-
-// Funções de Renderização
-function renderizarTabela() {
-    const corpo = document.getElementById('corpo-tabela');
-    corpo.innerHTML = '';
-    estoque.forEach((item, i) => {
-        corpo.innerHTML += `
-            <tr>
-                <td><strong>${item.unidade}</strong></td>
-                <td><small>${item.grupo} > ${item.subgrupo}</small></td>
-                <td>${item.nome}</td>
-                <td>${item.quantidade}</td>
-                <td>
-                    <button onclick="editarItem(${i})" class="btn" style="background:orange; padding:4px 8px">✏️</button>
-                    <button onclick="excluirItem(${i})" class="btn" style="background:red; padding:4px 8px">🗑️</button>
-                </td>
-            </tr>
-        `;
-    });
-}
 
 function renderizarHistorico() {
     const corpo = document.getElementById('corpo-historico');
     corpo.innerHTML = historico.map(h => `
         <tr>
             <td><small>${h.data}</small></td>
-            <td>${h.unidade}</td>
+            <td><strong>${h.unidade}</strong></td>
             <td>${h.item}</td>
-            <td style="color:${h.tipo==='ENTRADA'?'green':'red'}"><strong>${h.tipo}</strong></td>
-            <td>${h.qtd}</td>
+            <td style="color:${h.tipo==='ENTRADA'?'green':'red'}"><strong>${h.tipo} (${h.qtd})</strong></td>
+            <td>${h.usuario}</td>
+            <td><code style="background:#eee">${h.rastreio}</code></td>
         </tr>
     `).join('');
 }
 
-// Impressão Separada por Empresa
-function prepararImpressao() {
-    const area = document.getElementById('area-impressao');
-    area.innerHTML = '';
-    const unidades = ["MATRIZ", "LIFE", "SUL"];
-
-    unidades.forEach(un => {
-        const itensUnidade = estoque.filter(i => i.unidade === un);
-        if (itensUnidade.length > 0) {
-            let html = `
-                <div class="page-break">
-                    <div class="header-print">
-                        <h2>CONTROLE DE ESTOQUE - NEUROPSICOCENTRO</h2>
-                        <h3>UNIDADE: ${un}</h3>
-                    </div>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Grupo</th>
-                                <th>Subgrupo</th>
-                                <th>Item</th>
-                                <th>Saldo</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${itensUnidade.map(i => `
-                                <tr>
-                                    <td>${i.grupo}</td>
-                                    <td>${i.subgrupo}</td>
-                                    <td>${i.nome}</td>
-                                    <td>${i.quantidade}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                    <p><small>Relatório gerado em: ${new Date().toLocaleString()}</small></p>
-                </div>
-            `;
-            area.innerHTML += html;
-        }
-    });
-    window.print();
-}
-
-function salvarTudo() {
-    localStorage.setItem('np_estoque_db', JSON.stringify(estoque));
-    localStorage.setItem('np_historico_db', JSON.stringify(historico));
-    renderizarTabela();
-}
-
 function editarItem(i) {
     const item = estoque[i];
+    document.getElementById('item-sku').value = item.sku;
     document.getElementById('unidade').value = item.unidade;
     document.getElementById('grupo').value = item.grupo;
     atualizarSubgrupos();
     document.getElementById('subgrupo').value = item.subgrupo;
     document.getElementById('item-nome').value = item.nome;
     document.getElementById('item-qtd').value = item.quantidade;
+    document.getElementById('item-min').value = item.minimo;
+    document.getElementById('item-preco').value = item.preco;
     document.getElementById('edit-index').value = i;
-    trocarAba({currentTarget: document.querySelector('.nav-btn')}, 'aba-estoque');
+    trocarAba(null, 'aba-estoque');
 }
 
-function excluirItem(i) {
-    if(confirm("Excluir item?")) { estoque.splice(i, 1); salvarTudo(); }
+function limparFormulario() {
+    document.getElementById('form-estoque').reset();
+    document.getElementById('edit-index').value = "";
 }
+
+function mostrarMensagem(msg) {
+    const t = document.getElementById('toast-msg');
+    t.innerText = msg; t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+}
+
+function exportarBackup() {
+    const blob = new Blob([JSON.stringify({estoque, historico}, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `estoque_neuropsico.json`;
+    a.click();
+}
+
+function prepararImpressao() { window.print(); }
 
 renderizarTabela();

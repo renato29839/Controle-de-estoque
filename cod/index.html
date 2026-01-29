@@ -3,28 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estoque - NEUROPSICOCENTRO</title>
+    <title>Sistema de Alta Precisão - NEUROPSICOCENTRO</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <div class="container no-print">
         <header class="main-header">
-            <h1>CONTROLE DE ESTOQUE - NEUROPSICOCENTRO</h1>
+            <h1>GESTÃO DE ESTOQUE</h1>
+            <p>NEUROPSICOCENTRO - Controle de Ativos e Insumos</p>
+            
             <nav class="main-nav">
-                <button class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">📦 Inventário</button>
-                <button class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">🔄 Movimentar</button>
-                <button class="nav-btn" onclick="trocarAba(event, 'aba-historico')">📜 Histórico</button>
-                <button class="nav-btn print-trigger" onclick="prepararImpressao()">🖨️ Imprimir por Unidade</button>
+                <button id="btn-tab-estoque" class="nav-btn active" onclick="trocarAba(event, 'aba-estoque')">Inventário</button>
+                <button id="btn-tab-movimentacao" class="nav-btn" onclick="trocarAba(event, 'aba-movimentacao')">Movimentar</button>
+                <button id="btn-tab-historico" class="nav-btn" onclick="trocarAba(event, 'aba-historico')">Auditoria</button>
+                <button class="nav-btn btn-backup" onclick="exportarBackup()">Exportar Dados</button>
+                <button class="nav-btn print-trigger" onclick="prepararImpressao()">Relatório</button>
             </nav>
         </header>
 
         <main id="aba-estoque" class="tab-content active">
             <section class="card">
-                <h3 id="titulo-form">Cadastrar Item</h3>
+                <h3>Cadastrar Item</h3>
                 <form id="form-estoque">
                     <input type="hidden" id="edit-index">
                     <div class="grid-form">
+                        <input type="text" id="item-sku" placeholder="SKU/Código Único" required>
                         <select id="unidade" required>
                             <option value="">Unidade</option>
                             <option value="MATRIZ">MATRIZ</option>
@@ -39,6 +43,8 @@
                         <select id="subgrupo" required><option value="">Subgrupo</option></select>
                         <input type="text" id="item-nome" placeholder="Descrição do Item" required>
                         <input type="number" id="item-qtd" placeholder="Qtd Inicial" min="0" required>
+                        <input type="number" id="item-min" placeholder="Estoque Mínimo" min="0" required>
+                        <input type="number" id="item-preco" placeholder="Preço Unitário (R$)" step="0.01" min="0" required>
                     </div>
                     <div class="form-actions">
                         <button type="submit" class="btn btn-save">Salvar no Sistema</button>
@@ -47,18 +53,34 @@
                 </form>
             </section>
 
-            <table class="tabela-estilizada">
-                <thead>
-                    <tr>
-                        <th>Unidade</th>
-                        <th>Grupo > Subgrupo</th>
-                        <th>Item</th>
-                        <th>Saldo Atual</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-tabela"></tbody>
-            </table>
+            <section class="card">
+                <div class="grid-filtros">
+                    <select id="filtro-unidade" onchange="renderizarTabela()">
+                        <option value="TODAS">Ver Todas as Unidades</option>
+                        <option value="MATRIZ">MATRIZ</option>
+                        <option value="LIFE">LIFE</option>
+                        <option value="SUL">SUL</option>
+                    </select>
+                    <input type="text" id="busca-estoque" placeholder="Pesquisar por SKU ou Nome..." onkeyup="renderizarTabela()">
+                </div>
+                <div id="resumo-financeiro"></div>
+            </section>
+
+            <div class="tabela-wrapper">
+                <table class="tabela-estilizada">
+                    <thead>
+                        <tr>
+                            <th>Unidade / SKU</th>
+                            <th>Categoria</th>
+                            <th>Item</th>
+                            <th>Status / Saldo</th>
+                            <th>Financeiro</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="corpo-tabela"></tbody>
+                </table>
+            </div>
         </main>
 
         <div id="aba-movimentacao" class="tab-content">
@@ -66,12 +88,26 @@
                 <h3>Lançar Entrada ou Saída</h3>
                 <form id="form-movimentacao">
                     <div class="grid-form">
+                        <select id="mov-unidade-filtro" onchange="popularSelectItens()">
+                            <option value="">Selecione a Unidade...</option>
+                            <option value="MATRIZ">MATRIZ</option>
+                            <option value="LIFE">LIFE</option>
+                            <option value="SUL">SUL</option>
+                        </select>
                         <select id="mov-item" required><option value="">Selecione o Item...</option></select>
                         <select id="mov-tipo" required>
                             <option value="entrada">Entrada (+)</option>
                             <option value="saida">Saída (-)</option>
                         </select>
                         <input type="number" id="mov-qtd" placeholder="Quantidade" min="1" required>
+                        <select id="mov-motivo" required>
+                            <option value="">Motivo...</option>
+                            <option value="Compra">Compra/Reposição</option>
+                            <option value="Uso Interno">Uso Interno</option>
+                            <option value="Ajuste">Ajuste de Inventário</option>
+                            <option value="Avaria">Avaria/Vencimento</option>
+                        </select>
+                        <input type="text" id="mov-usuario" placeholder="Responsável" required>
                     </div>
                     <button type="submit" class="btn btn-mov">Confirmar Movimentação</button>
                 </form>
@@ -80,15 +116,16 @@
 
         <div id="aba-historico" class="tab-content">
             <section class="card">
-                <h3>Registro de Movimentações Recentes</h3>
+                <h3>Log de Auditoria</h3>
                 <table class="tabela-estilizada">
                     <thead>
                         <tr>
                             <th>Data/Hora</th>
                             <th>Unidade</th>
-                            <th>Item</th>
-                            <th>Tipo</th>
-                            <th>Qtd</th>
+                            <th>Item (SKU)</th>
+                            <th>Operação</th>
+                            <th>Responsável</th>
+                            <th>Rastreio</th>
                         </tr>
                     </thead>
                     <tbody id="corpo-historico"></tbody>
@@ -97,8 +134,8 @@
         </div>
     </div>
 
-    <div id="area-impressao" class="print-only">
-        </div>
+    <div id="area-impressao" class="print-only"></div>
+    <div id="toast-msg" class="toast"></div>
 
     <script src="script.js"></script>
 </body>
